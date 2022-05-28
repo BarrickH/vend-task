@@ -1,0 +1,15 @@
+/Pipfile
+.idea
+/dump\.rdb
+*.db
+
+/instance/
+*__pycache__/
+*.pyc
+
+
+
+/.virtualenvs/
+/venv/
+
+/tools/
