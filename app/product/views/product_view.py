@@ -25,7 +25,7 @@ class ProductView(MethodResource):
                 location='query')
     @marshal_with(ProductViewSchema(many=True))
     def get(self, **kwargs):
-        rs = ProductModel.query(hash_key=ProductModel.set_hash_key(), limit=kwargs.get('size'),
+        rs = ProductModel.pk_product_id_index.query(hash_key=ProductModel.set_hash_key(), limit=kwargs.get('size'),
                                 last_evaluated_key=kwargs.get('cursor'), scan_index_forward=kwargs.get('after'))
         return [self.response_payload(r) for r in rs if r]
 
