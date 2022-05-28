@@ -9,7 +9,7 @@ currency_const = {'USD':"$"}
 
 
 class ProductViewSchema(Schema):
-    id = fields.Str()
+    id = fields.Int()
     name = fields.Str()
     price = fields.Str()
 
@@ -60,7 +60,7 @@ class ProductView(MethodResource):
     def response_payload(self,rs:ProductModel):
         price_with_currency = self.convert_price_set(rs.price_set)
         return {
-            'id': rs.sk,
+            'id': rs.product_id,
             'name': rs.name,
             'price': price_with_currency
         }

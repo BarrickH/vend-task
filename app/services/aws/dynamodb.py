@@ -13,22 +13,15 @@ class BaseModel(Model):
         read_capacity_units = 5
         write_capacity_units = 5
 
-    def __iter__(self):
-        for name, attr in self.get_attributes().items():
-            if isinstance(attr, MapAttribute):
-                attr = getattr(self, name)
-                if attr is None:
-                    yield name, {}
-                else:
-                    yield name, getattr(self, name).as_dict()
-            elif isinstance(attr, ListAttribute):
-                attr = getattr(self, name)
-                if attr is None:
-                    yield name, []
-                else:
-                    yield name, [el for el in getattr(self, name)]
-            else:
-                yield name, attr.serialize(getattr(self, name))
+
+class PkProductIdIndex(GlobalSecondaryIndex):
+    class Meta(BaseModel.Meta):
+        index_name = "pk-product_id-index"
+        projection = AllProjection()
+
+    name = UnicodeAttribute(hash_key=True)
+    create_at = UTCDateTimeAttribute(range_key=True)
+
 
 class NameCreateAtIndex(GlobalSecondaryIndex):
     class Meta(BaseModel.Meta):
