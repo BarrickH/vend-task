@@ -3,16 +3,13 @@ from flask_apispec.views import MethodResource
 from marshmallow import fields, Schema
 from flask_apispec import use_kwargs, marshal_with, doc
 from app.ultilities.auth.authenticator import api_auth
-from app.product.models.product_model import ProductModel
+from app.product.models.product_model import ProductModel, StoreModel
 
-
-const = {
-            'USD':"$"
-        }
+currency_const = {'USD':"$"}
 
 
 class ProductViewSchema(Schema):
-    id = fields.Int()
+    id = fields.Str()
     name = fields.Str()
     price = fields.Str()
 
@@ -30,34 +27,44 @@ class ProductView(MethodResource):
     def get(self, **kwargs):
         rs = ProductModel.query(hash_key=ProductModel.set_hash_key(), limit=kwargs.get('size'),
                                 last_evaluated_key=kwargs.get('cursor'), scan_index_forward=kwargs.get('after'))
-        return [self.response_payload(r) for r in rs]
+        return [self.response_payload(r) for r in rs if r]
 
     # create new products
     @api_auth
     @doc(description='Product for Vend task', tags=['Product'])
     @use_kwargs({'name': fields.Str(required=True),
                  'price': fields.Str(required=True),
-                 'currency_code': fields.Str(required=False)},
+                 'currency_code': fields.Str(required=False),
+                 'product_type': fields.Str(required=False)},
                 location='json')
     @marshal_with(ProductViewSchema)
-    def post(self, **kwargs):
-        try:
-            ProductModel.name = kwargs.get('name')
-            ProductModel.price_set = {"price":kwargs.get('price'),'currency_code': kwargs.get('currency_code')}
-            rs = ProductModel().save_product()
-            return self.response_payload(rs)
-        except Exception as e:
-            print(str(e))
-            abort(400, msg='data format error')
+    def post(self, tenant_id,**kwargs):
+        product = ProductModel()
+        product.name = kwargs.get('name')
+        currency_code = kwargs.get('currency_code')
+        if not currency_code:
+            try:
+                currency_code = StoreModel.get(hash_key=StoreModel.set_hash_key(tenant_id),
+                                               range_key=StoreModel.set_sort_key('currency_code')).value
+            except Exception as e:
+                print(str(e))
+                abort(500, msg='internal server error')
+
+        if currency_code.upper() not in currency_const.keys():
+            raise Exception
+        product.price_set = {"price":kwargs.get('price'),'currency_code': currency_code}
+        product.pk = kwargs.get('product_type') if kwargs.get('product_type') else 'simple'
+        rs = product.save_product()
+        return self.response_payload(rs)
 
     def response_payload(self,rs:ProductModel):
         price_with_currency = self.convert_price_set(rs.price_set)
         return {
-            'ID': rs.sk,
-            'Name': rs.name,
-            'Price': price_with_currency
+            'id': rs.sk,
+            'name': rs.name,
+            'price': price_with_currency
         }
 
     @staticmethod
     def convert_price_set(price_set:dict):
-        return f"{const[price_set.get('currency_code')]}{price_set.get('price')}"
+        return f"{currency_const[price_set.currency_code]}{price_set.price}"

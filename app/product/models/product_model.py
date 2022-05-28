@@ -9,7 +9,7 @@ class ProductModel(BaseModel):
         pass
 
     pk = UnicodeAttribute(hash_key=True)
-    sk = NumberAttribute(range_key=True)
+    sk = UnicodeAttribute(range_key=True)
     # Global Secondary Index
     name_create_at_index = NameCreateAtIndex()
     # identifier = bc email
@@ -27,7 +27,25 @@ class ProductModel(BaseModel):
         if not self.create_at:
             self.create_at = datetime.utcnow()
         if not self.sk:
-            product_id = get_instance_id(self.pk, ProductModel)
+            product_id = get_instance_id(self.pk, self)
             self.sk = product_id
         super(ProductModel, self).save()
         return self
+
+
+class StoreModel(BaseModel):
+    class Meta(BaseModel.Meta):
+        pass
+    # pk = Config__tenant_id
+    pk = UnicodeAttribute(hash_key=True)
+    # sk = store_default__currency_code
+    sk = UnicodeAttribute(range_key=True)
+    value = UnicodeAttribute(null=False)
+
+    @staticmethod
+    def set_hash_key(tenant_id: str):
+        return 'Config__{}'.format(tenant_id)
+
+    @staticmethod
+    def set_sort_key(key: str):
+        return 'store_default__{}'.format(key)

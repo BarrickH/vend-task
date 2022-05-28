@@ -1,17 +1,21 @@
 from app.ultilities.auth.authenticator import JWTAuth
 from flask_apispec import use_kwargs
 from marshmallow import fields
+from flask_apispec.views import MethodResource
 
 
-class Auth:
+class Auth(MethodResource):
     def __init__(self):
         pass
 
-    @use_kwargs({'UmbracoOrderNumber': fields.Str(required=True),
-                 'PackingSlipId': fields.Str(required=False),
-                 'SalesOrderId': fields.Str(required=False),
-                 'WebShopCustomerId': fields.Str(required=False)},
+    @use_kwargs({'client_id': fields.Str(required=True),
+                 'client_secret': fields.Str(required=True)},
                 location='json')
-    def post(self, **kwargs):
-        return JWTAuth().generate_token(tenant_id=kwargs.get('tenant_id'), client_id=kwargs.get('client_id'), secret=
-        kwargs.get('secret'), expiry_time=3600)
+    def post(self, tenant_id:str, **kwargs):
+        token = JWTAuth().generate_token(tenant_id=tenant_id, client_id=kwargs.get('client_id'), secret=
+        kwargs.get('client_secret'), expiry_time=3600)
+        return{
+            "token_type": "Bearer",
+            "expires_in": "3599",
+            "access_token": token
+        }

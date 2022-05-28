@@ -55,8 +55,10 @@ def create_app():
     docs = FlaskApiSpec(app)
 
     from app.product.views.product_view import ProductView
+    from app.ultilities.auth.views.auth import Auth
 
-    api.add_resource(ProductView, '/api/2.0/product')
+    api.add_resource(ProductView, '/<string:tenant_id>/api/1.0/products')
+    api.add_resource(Auth, '/login/<string:tenant_id>/oauth2/token')
 
     docs.register(ProductView)
 

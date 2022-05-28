@@ -12,7 +12,6 @@ class JWTAuth:
     def __init__(self):
         # need to save to db later:
         self.issuer = os.getenv('OAUTH_ISSUER')
-        self.expires_in = os.getenv('OAUTH_LONG_LIVED_EXPIRY')
 
     def encode_token(self, audience, secret, expires_in: int):
         now = datetime.utcnow()
@@ -39,7 +38,7 @@ class JWTAuth:
         else:
             for c in client:
                 audience = c.sk
-                secret = c.sk
+                secret = c.secret
         try:
             payload = jwt.decode(jwt=token, key=secret, audience=audience, verify=verify,
                                  algorithms=['HS512'])
@@ -59,6 +58,7 @@ class JWTAuth:
         if self.verify_client_secret(tenant_id, client_id, secret):
             return self.encode_token(audience=client_id, secret=secret,
                                      expires_in=expiry_time).decode()
+        abort(401)
 
     def verify_access_token(self, tenant_id: str, access_token: str):
         try:
@@ -75,6 +75,7 @@ class JWTAuth:
             client = AuthModel.query(hash_key=AuthModel.set_hash_key(tenant_id))
         except Exception as e:
             print(str(e))
+            abort(401)
         else:
             for c in client:
                 if c.sk == client_id and c.secret == secret:
@@ -86,7 +87,7 @@ def api_auth(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         token = None
-
+        tenant_id = kwargs.get('tenant_id')
         if 'Authorization' in request.headers:
             auth_header = request.headers['Authorization']
             try:
@@ -103,7 +104,10 @@ def api_auth(f):
 
         verified = JWTAuth().verify_access_token(tenant_id, token)
         if verified:
-            return f(*args, **kwargs)
+            try:
+                return f(*args, **kwargs)
+            except TypeError:
+                abort(400)
         else:
             abort(401)
 
