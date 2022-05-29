@@ -14,9 +14,9 @@ class BaseModel(Model):
         write_capacity_units = 5
 
 
-class PkProductIdIndex(GlobalSecondaryIndex):
+class PkIdIndex(GlobalSecondaryIndex):
     class Meta(BaseModel.Meta):
-        index_name = "pk-product_id-index"
+        index_name = "pk-id-index"
         projection = AllProjection()
 
     name = UnicodeAttribute(hash_key=True)

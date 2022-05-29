@@ -25,7 +25,7 @@ class ProductView(MethodResource):
                 location='query')
     @marshal_with(ProductViewSchema(many=True))
     def get(self, **kwargs):
-        rs = ProductModel.pk_product_id_index.query(hash_key=ProductModel.set_hash_key(), limit=kwargs.get('size'),
+        rs = ProductModel.pk_id_index.query(hash_key=ProductModel.set_hash_key(), limit=kwargs.get('size'),
                                 last_evaluated_key=kwargs.get('cursor'), scan_index_forward=kwargs.get('after'))
         return [self.response_payload(r) for r in rs if r]
 
@@ -38,7 +38,7 @@ class ProductView(MethodResource):
                  'product_type': fields.Str(required=False)},
                 location='json')
     @marshal_with(ProductViewSchema)
-    def post(self, tenant_id,**kwargs):
+    def post(self, tenant_id:str,**kwargs):
         product = ProductModel()
         product.name = kwargs.get('name')
         currency_code = kwargs.get('currency_code')
@@ -60,7 +60,7 @@ class ProductView(MethodResource):
     def response_payload(self,rs:ProductModel):
         price_with_currency = self.convert_price_set(rs.price_set)
         return {
-            'id': rs.product_id,
+            'id': rs.id,
             'name': rs.name,
             'price': price_with_currency
         }
