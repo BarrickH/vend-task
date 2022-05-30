@@ -12,7 +12,7 @@ def get_instance_new_id(pk: str, model_instance: Model):
         try:
             for m in rs:
                 # should change to intity_id
-                return m.product_id + 1
+                return m.id + 1
         except Exception as e:
             print(e)
         return 1

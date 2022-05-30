@@ -1,21 +1,20 @@
 from pynamodb.attributes import UnicodeAttribute, NumberAttribute, UTCDateTimeAttribute, MapAttribute
-from app.services.aws.dynamodb import BaseModel, NameCreateAtIndex, PkIdIndex
+from app.services.aws.dynamodb import BaseModel, NameCreateAtIndex, PkIdIndex, ProductMeta
 from datetime import datetime
 from app.ultilities.helpers import get_instance_new_id
 from app.config.base import BaseConfig
 
 
-class ProductModel(BaseModel):
-    class Meta(BaseModel.Meta):
-        table_name = ''
-
-        def __init__(self, tenant_id):
-            self.table_name = "{}.{}.{}".format(tenant_id, BaseConfig.PROJECT_NAME, BaseConfig.ENV)
-
-    def __init__(self, **attrs):
-        super().__init__(**attrs)
-        self.tenant_id = attrs.get('tenant_id')
+class ProductModel(ProductMeta):
+    class Meta(ProductMeta.Meta):
+        # table_name = "vend_barrick.vend_demo.development"
         pass
+
+    @staticmethod
+    def set_model(tenant_id:str=None):
+        if not ProductMeta.Meta.table_name:
+            ProductMeta.Meta.table_name = "{}.{}.{}".format(tenant_id, BaseConfig.PROJECT_NAME,
+                                                            BaseConfig.ENV)
 
     pk = UnicodeAttribute(hash_key=True)
     sk = UnicodeAttribute(range_key=True)
@@ -47,6 +46,7 @@ class ProductModel(BaseModel):
         return self
 
 
+# move out from product model to config model
 class StoreModel(BaseModel):
     class Meta(BaseModel.Meta):
         pass

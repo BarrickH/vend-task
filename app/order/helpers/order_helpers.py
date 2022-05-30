@@ -5,7 +5,7 @@ from flask_restful import abort
 
 def get_product_record(tenant_id: str, pid: int):
     try:
-        r = ProductModel.pk_id_index.get(hash_key=ProductModel.set_hash_key(tenant_id), range_key=pid)
+        r = ProductModel(tenant_id=tenant_id).pk_id_index.get(hash_key=ProductModel.set_hash_key(tenant_id), range_key=pid)
     except Exception as e:
         abort(400, msg=f'product not found (id: {pid})')
 

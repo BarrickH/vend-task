@@ -37,11 +37,7 @@ class OrderView(MethodResource):
     @use_kwargs(OrderViewRequestSchema, location='json')
     @marshal_with(OrderViewResponseSchema(partial=True))
     def post(self, tenant_id: str, **kwargs):
-        Sales(tenant_id).create_sale_main(kwargs)
-        Order = OrderModel()
-        product.price_set = {"price": kwargs.get('price'), 'currency_code': currency_code}
-        product.pk = kwargs.get('product_type') if kwargs.get('product_type') else 'simple'
-        rs = product.save_product()
+        rs = Sales(tenant_id).create_sale_main(kwargs)
         return self.response_payload(rs)
 
     def response_payload(self, rs: OrderModel):

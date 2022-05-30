@@ -5,7 +5,7 @@ from flask_apispec import use_kwargs, marshal_with, doc
 from app.ultilities.auth.authenticator import api_auth
 from app.product.models.product_model import ProductModel, StoreModel
 
-currency_const = {'USD':"$"}
+currency_const = {'USD': "$"}
 
 
 class ProductViewSchema(Schema):
@@ -24,9 +24,13 @@ class ProductView(MethodResource):
                  'after': fields.Bool(required=False)},
                 location='query')
     @marshal_with(ProductViewSchema(many=True))
-    def get(self, **kwargs):
-        rs = ProductModel.pk_id_index.query(hash_key=ProductModel.set_hash_key(), limit=kwargs.get('size'),
-                                last_evaluated_key=kwargs.get('cursor'), scan_index_forward=kwargs.get('after'))
+    def get(self, tenant_id: str, **kwargs):
+        pm = ProductModel()
+        pm.set_model(tenant_id=tenant_id)
+        rs = pm.query(hash_key=ProductModel.set_hash_key(),
+                      limit=kwargs.get('size'),
+                      last_evaluated_key=kwargs.get('cursor'),
+                      scan_index_forward=kwargs.get('after'))
         return [self.response_payload(r) for r in rs if r]
 
     # create new products
@@ -38,26 +42,31 @@ class ProductView(MethodResource):
                  'product_type': fields.Str(required=False)},
                 location='json')
     @marshal_with(ProductViewSchema)
-    def post(self, tenant_id:str,**kwargs):
+    def post(self, tenant_id: str, **kwargs):
+        # for save time, put logic at view, need to move to helper later
+        # init product model
         product = ProductModel()
+        product.set_model(tenant_id=tenant_id)
         product.name = kwargs.get('name')
         currency_code = kwargs.get('currency_code')
         if not currency_code:
+            # use store default currency code
             try:
                 currency_code = StoreModel.get(hash_key=StoreModel.set_hash_key(tenant_id),
                                                range_key=StoreModel.set_sort_key('currency_code')).value
             except Exception as e:
                 print(str(e))
                 abort(500, msg='internal server error')
-
+        # check if the currency code valid
         if currency_code.upper() not in currency_const.keys():
             raise Exception
-        product.price_set = {"price":kwargs.get('price'),'currency_code': currency_code}
+        product.price_set = {"price": kwargs.get('price'), 'currency_code': currency_code}
+        # simple product as default product
         product.pk = kwargs.get('product_type') if kwargs.get('product_type') else 'simple'
         rs = product.save_product()
         return self.response_payload(rs)
 
-    def response_payload(self,rs:ProductModel):
+    def response_payload(self, rs: ProductModel):
         price_with_currency = self.convert_price_set(rs.price_set)
         return {
             'id': rs.id,
@@ -66,5 +75,5 @@ class ProductView(MethodResource):
         }
 
     @staticmethod
-    def convert_price_set(price_set:dict):
+    def convert_price_set(price_set: dict):
         return f"{currency_const[price_set.currency_code]}{price_set.price}"
