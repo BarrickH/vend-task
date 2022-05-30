@@ -1,0 +1,13 @@
+{
+  "development": {
+    "profile_name": "barrick-private-project",
+    "app_function": "app.app.app",
+    "aws_region": "ap-northeast-1",
+    "project_name": "vend_demo",
+    "runtime": "python3.9",
+    "s3_bucket": "barrick-vend-task-zappa",
+    "timeout_seconds": 900,
+    "memory_size": 300,
+    "remote_env": "s3://tasks-barrick/vend.json"
+  }
+}
