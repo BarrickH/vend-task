@@ -20,8 +20,10 @@ class OrderModel(OrderMeta):
     # Global Secondary Index
     pk_id_index = PkIdIndexOrder()
     id = NumberAttribute(null=False)
-
+    price_total = UnicodeAttribute(default="0")
     line_items = ListAttribute(of=MapAttribute, null=True)
+    # just for convenient. list might be more fit in real task
+    discount_total_set = MapAttribute(null=True)
     create_at = UTCDateTimeAttribute()
 
     # those methods could make public method and move to base model, so that other resource could utilize

@@ -14,7 +14,7 @@ currency_const = {'USD': "$"}
 class LineItemSchema(Schema):
     id = fields.Int()
     price = fields.Str(required=False)
-    discount_percentage = fields.Float(required=False)
+    discount_per_item_proportion = fields.Float(required=False)
     quantity = fields.Int()
 
 
@@ -26,7 +26,6 @@ class OrderViewRequestSchema(Schema):
 class OrderViewResponseSchema(Schema):
     id = fields.Int()
     price_total = fields.Str()
-
     line_items = fields.List(fields.Nested(LineItemSchema))
     discount_total_set = fields.Dict()
 
@@ -46,7 +45,8 @@ class OrderView(MethodResource):
         return {
             "id": rs.get('id'),
             "line_items": rs.get('line_items'),
-            "price_total": price_total_with_currency
+            "price_total": price_total_with_currency,
+            "discount_total_set": rs.get('discount_total_set')
         }
 
     @staticmethod
