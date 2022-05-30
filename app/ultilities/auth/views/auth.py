@@ -12,8 +12,8 @@ class Auth(MethodResource):
                  'client_secret': fields.Str(required=True)},
                 location='json')
     def post(self, tenant_id:str, **kwargs):
-        token = JWTAuth().generate_token(tenant_id=tenant_id, client_id=kwargs.get('client_id'), secret=
-        kwargs.get('client_secret'), expiry_time=3600)
+        token = JWTAuth().generate_token(tenant_id=tenant_id, client_id=kwargs.get('client_id'),
+                                         secret=kwargs.get('client_secret'), expiry_time=3600)
         return{
             "token_type": "Bearer",
             "expires_in": "3599",
