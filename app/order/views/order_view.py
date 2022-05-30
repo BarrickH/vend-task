@@ -2,10 +2,11 @@ from flask_restful import Resource, abort, request, reqparse
 from flask_apispec.views import MethodResource
 from marshmallow import fields, Schema
 from flask_apispec import use_kwargs, marshal_with, doc
+
+from app.product.models.product_model import StoreModel
 from app.ultilities.auth.authenticator import api_auth
 from app.order.models.order_model import OrderModel
 from app.order.helpers.order_helpers import Sales
-
 
 currency_const = {'USD': "$"}
 
@@ -13,7 +14,7 @@ currency_const = {'USD': "$"}
 class LineItemSchema(Schema):
     id = fields.Int()
     price = fields.Str(required=False)
-    discount_percentage= fields.Float(required=False)
+    discount_percentage = fields.Float(required=False)
     quantity = fields.Int()
 
 
@@ -24,7 +25,7 @@ class OrderViewRequestSchema(Schema):
 
 class OrderViewResponseSchema(Schema):
     id = fields.Int()
-    price_total = fields.Float()
+    price_total = fields.Str()
 
     line_items = fields.List(fields.Nested(LineItemSchema))
     discount_total_set = fields.Dict()
@@ -40,14 +41,16 @@ class OrderView(MethodResource):
         rs = Sales(tenant_id).create_sale_main(kwargs)
         return self.response_payload(rs)
 
-    def response_payload(self, rs: OrderModel):
-        price_with_currency = self.convert_price_set(rs.price_set)
+    def response_payload(self, rs: dict):
+        price_total_with_currency = self.convert_price(str(rs.get('price_total')), rs.get('tenant_id'))
         return {
-            'id': rs.id,
-            'name': rs.name,
-            'price': price_with_currency
+            "id": rs.get('id'),
+            "line_items": rs.get('line_items'),
+            "price_total": price_total_with_currency
         }
 
     @staticmethod
-    def convert_price_set(price_set: dict):
-        return f"{currency_const[price_set.currency_code]}{price_set.price}"
+    def convert_price(price_total: str, tenant_id: str):
+        currency_code = StoreModel.get(hash_key=StoreModel.set_hash_key(tenant_id),
+                                       range_key=StoreModel.set_sort_key('currency_code')).value
+        return f"{currency_const[currency_code]}{price_total}"

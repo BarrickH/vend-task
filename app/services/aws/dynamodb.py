@@ -18,6 +18,7 @@ class BaseModel(Model):
                 yield attr, value
 
     def __iter__(self):
+        # make to public func later
         for name, attr in self.get_attributes().items():
             if isinstance(attr, MapAttribute):
                 attr = getattr(self, name)
@@ -45,27 +46,55 @@ class BaseModel(Model):
 
 class ProductMeta(Model):
     class Meta:
-        table_name=''
+        table_name = ''
         pass
 
     def __init__(self, **attrs):
         super().__init__(**attrs)
+        # make to public func later
         base_meta = [a for a in dir(BaseModel.Meta) if not a.startswith('__') and not callable(getattr(BaseModel.Meta, a))]
         for attr in base_meta:
             if attr != 'table_name':
                 setattr(ProductMeta.Meta, attr, getattr(BaseModel.Meta,attr))
 
+    def __iter__(self):
+        # make to public func later
+        for name, attr in self.get_attributes().items():
+            if isinstance(attr, MapAttribute):
+                attr = getattr(self, name)
+                if attr is None:
+                    yield name, {}
+                else:
+                    yield name, getattr(self, name).as_dict()
+            elif isinstance(attr, ListAttribute):
+                attr = getattr(self, name)
+                if attr is None:
+                    yield name, []
+                else:
+                    items = [el.attribute_values
+                             if isinstance(el, MapAttribute)
+                             else el for el in attr]
+                    yield name, items
+            elif isinstance(attr, UTCDateTimeAttribute):
+                if getattr(self, name):
+                    yield name, attr.serialize(getattr(self, name))
+            elif isinstance(attr, NumberAttribute):
+                yield name, getattr(self, name)
+            else:
+                yield name, attr.serialize(getattr(self, name))
 
 class OrderMeta(Model):
     class Meta:
+        table_name = ''
         pass
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, **attrs):
+        super().__init__(**attrs)
+        # make to public func later
         base_meta = [a for a in dir(BaseModel.Meta) if not a.startswith('__') and not callable(getattr(BaseModel.Meta, a))]
         for attr in base_meta:
             if attr != 'table_name':
-                setattr(ProductMeta.Meta, attr, getattr(BaseModel.Meta,attr))
+                setattr(OrderMeta.Meta, attr, getattr(BaseModel.Meta,attr))
 
 
 class PkIdIndex(GlobalSecondaryIndex):
